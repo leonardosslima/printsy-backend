@@ -1,22 +1,27 @@
 {
-  "name": "printsy-backend",
+  "name": "printsy-fullstack",
   "version": "1.0.0",
-  "description": "Printsy.io - Micro SaaS para gestão de gráficas - Backend API",
+  "description": "Printsy.io - Sistema completo para gestão de gráficas (Frontend + Backend)",
   "main": "dist/server.js",
   "scripts": {
+    "dev": "concurrently \"npm run backend:dev\" \"npm run frontend:dev\"",
+    "backend:dev": "nodemon src/server.ts",
+    "frontend:dev": "cd frontend && npm run dev",
+    "backend:build": "tsc",
+    "frontend:build": "cd frontend && npm run build",
+    "build": "npm run backend:build && npm run frontend:build",
     "start": "node dist/server.js",
-    "dev": "nodemon src/server.ts",
-    "build": "tsc",
     "db:migrate": "npx prisma migrate dev",
     "db:generate": "npx prisma generate",
     "db:studio": "npx prisma studio",
     "db:seed": "tsx prisma/seed.ts",
     "db:reset": "npx prisma migrate reset && npm run db:seed",
+    "setup": "npm install && cd frontend && npm install && cd .. && npm run db:generate",
     "test": "jest",
     "lint": "eslint src/**/*.ts",
     "type-check": "tsc --noEmit"
   },
-  "keywords": ["printsy", "saas", "grafica", "gestao", "api", "typescript"],
+  "keywords": ["printsy", "saas", "grafica", "gestao", "fullstack", "typescript"],
   "author": "Printsy.io Team",
   "license": "MIT",
   "dependencies": {
@@ -59,7 +64,8 @@
     "supertest": "^6.3.3",
     "@typescript-eslint/eslint-plugin": "^6.13.0",
     "@typescript-eslint/parser": "^6.13.0",
-    "eslint": "^8.54.0"
+    "eslint": "^8.54.0",
+    "concurrently": "^8.2.2"
   },
   "engines": {
     "node": ">=18.0.0"

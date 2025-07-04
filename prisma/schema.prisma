@@ -203,6 +203,8 @@ model Order {
   createdBy   User        @relation("CreatedBy", fields: [userId], references: [id])
   quote       Quote?      @relation(fields: [quoteId], references: [id])
   items       OrderItem[]
+  
+  @@unique([quoteId])
   invoice     Invoice?    // um pedido pode gerar uma fatura
   
   @@map("orders")
@@ -251,6 +253,8 @@ model Invoice {
   createdBy User @relation("CreatedBy", fields: [userId], references: [id])
   order Order? @relation(fields: [orderId], references: [id])
   items InvoiceItem[]
+  
+  @@unique([orderId])
   
   @@map("invoices")
 }

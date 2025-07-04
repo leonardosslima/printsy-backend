@@ -1,334 +1,332 @@
-# 🖨️ Gráfica SaaS - Backend API
+# 🖨️ Printsy.io - Sistema Completo de Gestão de Gráficas
 
-Micro SaaS voltado para gráficas de pequeno e médio porte. Sistema completo para digitalizar a gestão com foco em automação, controle financeiro, organização de pedidos e orçamentos, além de controle de estoque e CRM.
+Sistema **fullstack integrado** para gestão completa de gráficas de pequeno e médio porte, desenvolvido com **React + TypeScript** no frontend e **Node.js + Express + TypeScript** no backend.
 
-## 🚀 Tecnologias Utilizadas
+## 🚀 **STATUS DO PROJETO**
 
-- **Backend**: Node.js + Express
-- **Banco de Dados**: PostgreSQL
-- **ORM**: Prisma
-- **Autenticação**: JWT
-- **Validação**: Joi
-- **Documentação**: JSDoc
-- **Logs**: Morgan
-- **Segurança**: Helmet + Rate Limiting
+✅ **BACKEND COMPLETO** - API REST funcional com todas as rotas  
+🚧 **FRONTEND EM DESENVOLVIMENTO** - Estrutura criada, integração em andamento  
+🔗 **INTEGRAÇÃO** - Frontend conectado com backend via proxy
 
-## 📁 Estrutura do Projeto
+## � **TECNOLOGIAS**
+
+### Backend
+- **Node.js** + **Express** + **TypeScript**
+- **PostgreSQL** + **Prisma ORM**
+- **JWT Authentication**
+- **Swagger/OpenAPI** Documentation
+- **Rate Limiting** & Security
+
+### Frontend
+- **React** + **TypeScript** + **Vite**
+- **TailwindCSS** para estilização
+- **React Router** para navegação
+- **React Query** para cache e sincronização
+- **Axios** com interceptors JWT
+- **React Hook Form** para formulários
+
+## 🏗️ **ESTRUTURA DO PROJETO**
 
 ```
-grafica-saas-backend/
-├── prisma/
-│   ├── schema.prisma          # Schema do banco de dados
-│   └── seed.js               # Script para popular dados iniciais
-├── src/
-│   ├── config/
-│   │   ├── database.js       # Configuração do Prisma
-│   │   └── auth.js          # Configurações de autenticação
-│   ├── controllers/
-│   │   ├── authController.js # Autenticação e usuários
-│   │   ├── customerController.js # Gestão de clientes (CRM)
-│   │   ├── productController.js  # Produtos e estoque
-│   │   └── dashboardController.js # Dashboard e métricas
-│   ├── middleware/
-│   │   ├── auth.js          # Middleware de autenticação JWT
-│   │   ├── validation.js    # Middleware de validação Joi
-│   │   └── errorHandler.js  # Tratamento global de erros
-│   ├── routes/
-│   │   ├── auth.js          # Rotas de autenticação
-│   │   ├── customers.js     # Rotas de clientes
-│   │   ├── products.js      # Rotas de produtos
-│   │   ├── dashboard.js     # Rotas do dashboard
-│   │   └── index.js         # Agregador de rotas
-│   ├── utils/
-│   │   ├── response.js      # Padronização de respostas
-│   │   └── helpers.js       # Funções auxiliares
-│   ├── validators/
-│   │   ├── auth.js          # Validações de autenticação
-│   │   ├── customer.js      # Validações de clientes
-│   │   └── product.js       # Validações de produtos
-│   └── server.js            # Servidor principal
-├── .env.example             # Exemplo de variáveis de ambiente
-├── .gitignore
-├── package.json
+printsy-fullstack/
+├── frontend/                 # 🎨 Frontend React
+│   ├── src/
+│   │   ├── components/      # Componentes reutilizáveis
+│   │   ├── pages/          # Páginas da aplicação
+│   │   ├── hooks/          # Hooks customizados
+│   │   ├── lib/            # Configurações (API, utils)
+│   │   └── main.tsx        # Entrada da aplicação
+│   ├── package.json
+│   └── vite.config.ts
+│
+├── src/                     # 🔧 Backend API
+│   ├── controllers/        # Lógica de negócio
+│   ├── routes/            # Rotas da API
+│   ├── middleware/        # Middlewares
+│   ├── validators/        # Validação de dados
+│   └── server.ts          # Servidor principal
+│
+├── prisma/                 # 🗄️ Banco de dados
+│   ├── schema.prisma      # Schema do banco
+│   └── seed.ts           # Dados iniciais
+│
+├── package.json           # Scripts principais
 └── README.md
 ```
 
-## 🛠️ Instalação e Configuração
+## ⚡ **INSTALAÇÃO E EXECUÇÃO**
 
-### 1. Pré-requisitos
-
-- Node.js 18+ 
-- PostgreSQL 12+
-- npm ou yarn
-
-### 2. Clonar o repositório
+### 1️⃣ **Configuração Inicial (Apenas uma vez)**
 
 ```bash
-git clone <url-do-repositorio>
-cd grafica-saas-backend
-```
+# 1. Instalar dependências do projeto inteiro
+npm run setup
 
-### 3. Instalar dependências
-
-```bash
-npm install
-```
-
-### 4. Configurar variáveis de ambiente
-
-```bash
+# 2. Configurar variáveis de ambiente
 cp .env.example .env
-```
 
-Edite o arquivo `.env` com suas configurações:
+# 3. Editar o arquivo .env com suas configurações:
+# DATABASE_URL="postgresql://user:password@localhost:5432/printsy"
+# JWT_SECRET="seu-jwt-secret-super-seguro"
+# NODE_ENV="development"
+# PORT=3001
 
-```env
-# Database
-DATABASE_URL="postgresql://username:password@localhost:5432/grafica_saas?schema=public"
-
-# JWT
-JWT_SECRET="your-super-secret-jwt-key-here"
-JWT_EXPIRES_IN="7d"
-
-# Server
-PORT=3001
-NODE_ENV="development"
-
-# Email (para envio de orçamentos)
-EMAIL_HOST="smtp.gmail.com"
-EMAIL_PORT=587
-EMAIL_USER="your-email@gmail.com"
-EMAIL_PASS="your-app-password"
-
-# Upload
-UPLOAD_PATH="./uploads"
-MAX_FILE_SIZE=5242880
-```
-
-### 5. Configurar banco de dados
-
-```bash
-# Gerar o cliente Prisma
-npm run db:generate
-
-# Executar migrations
+# 4. Configurar banco de dados
 npm run db:migrate
-
-# Popular dados iniciais
 npm run db:seed
 ```
 
-### 6. Iniciar o servidor
+### 2️⃣ **Rodar o Sistema Completo**
 
 ```bash
-# Desenvolvimento
+# 🚀 Comando principal - roda frontend + backend juntos
 npm run dev
-
-# Produção
-npm start
 ```
 
-## 📊 Funcionalidades Implementadas
+Isso vai iniciar:
+- **Backend**: http://localhost:3001 (API)
+- **Frontend**: http://localhost:3000 (Interface)
 
-### ✅ Módulos Completos
-
-- **🔐 Autenticação e Usuários**
-  - Login/logout com JWT
-  - Registro de usuários
-  - Perfis (Admin/User)
-  - Gerenciamento de usuários
-
-- **👥 CRM (Gestão de Clientes)**
-  - CRUD completo de clientes
-  - Busca e filtros avançados
-  - Histórico de interações
-  - Soft delete
-
-- **📦 Gestão de Produtos e Estoque**
-  - CRUD de produtos/serviços
-  - Controle de estoque com movimentações
-  - Alertas de estoque baixo
-  - Categorização
-
-- **📈 Dashboard e Métricas**
-  - Visão geral do negócio
-  - Gráficos de faturamento
-  - Alertas importantes
-  - Relatórios básicos
-
-### 🚧 Módulos Planejados (TODO)
-
-- **💰 Orçamentos**
-  - Criação e edição
-  - Envio por email
-  - Conversão para pedidos
-
-- **📋 Pedidos**
-  - Gestão de produção
-  - Status e prioridades
-  - Prazos de entrega
-
-- **💳 Gestão Financeira**
-  - Contas a pagar/receber
-  - Fluxo de caixa
-  - Relatórios financeiros
-
-- **📄 Relatórios Avançados**
-  - Relatórios por período
-  - Análises de vendas
-  - Exportação PDF/Excel
-
-- **⚙️ Configurações**
-  - Dados da empresa
-  - Personalização de temas
-  - Configurações de sistema
-
-## 🔌 API Endpoints
-
-### Autenticação
-```
-POST   /api/auth/login           # Login
-POST   /api/auth/register        # Registro (admin)
-GET    /api/auth/profile         # Perfil do usuário
-PUT    /api/auth/profile         # Atualizar perfil
-PUT    /api/auth/change-password # Alterar senha
-GET    /api/auth/users           # Listar usuários (admin)
-PUT    /api/auth/users/:id/toggle-status # Ativar/desativar usuário
-```
-
-### Dashboard
-```
-GET    /api/dashboard            # Dados gerais
-GET    /api/dashboard/revenue-chart # Gráfico de faturamento
-GET    /api/dashboard/recent-orders # Pedidos recentes
-GET    /api/dashboard/overdue-accounts # Contas vencidas
-GET    /api/dashboard/low-stock  # Produtos com estoque baixo
-GET    /api/dashboard/sales-summary # Resumo de vendas
-```
-
-### Clientes
-```
-GET    /api/customers            # Listar clientes
-GET    /api/customers/active     # Clientes ativos (para forms)
-POST   /api/customers            # Criar cliente
-GET    /api/customers/:id        # Obter cliente por ID
-PUT    /api/customers/:id        # Atualizar cliente
-PUT    /api/customers/:id/toggle-status # Ativar/desativar
-DELETE /api/customers/:id        # Excluir cliente
-```
-
-### Produtos
-```
-GET    /api/products             # Listar produtos
-GET    /api/products/active      # Produtos ativos (para forms)
-GET    /api/products/categories  # Categorias
-POST   /api/products             # Criar produto
-GET    /api/products/:id         # Obter produto por ID
-PUT    /api/products/:id         # Atualizar produto
-PUT    /api/products/:id/toggle-status # Ativar/desativar
-POST   /api/products/:id/move-stock # Movimentar estoque
-GET    /api/products/stock/movements # Histórico movimentações
-```
-
-## 🔒 Autenticação
-
-O sistema utiliza JWT (JSON Web Token) para autenticação. Inclua o token no header:
-
-```
-Authorization: Bearer <seu-jwt-token>
-```
-
-### Credenciais Padrão (após seed)
-- **Admin**: `admin@grafica.com` / `admin123`
-- **User**: `usuario@grafica.com` / `user123`
-
-## 📝 Padrões de Resposta
-
-### Sucesso
-```json
-{
-  "success": true,
-  "message": "Operação realizada com sucesso",
-  "data": {},
-  "timestamp": "2024-01-01T00:00:00.000Z"
-}
-```
-
-### Erro
-```json
-{
-  "success": false,
-  "message": "Erro na operação",
-  "errors": [],
-  "timestamp": "2024-01-01T00:00:00.000Z"
-}
-```
-
-### Paginação
-```json
-{
-  "success": true,
-  "message": "Dados recuperados com sucesso",
-  "data": [],
-  "pagination": {
-    "page": 1,
-    "limit": 10,
-    "total": 100,
-    "totalPages": 10,
-    "hasNext": true,
-    "hasPrev": false
-  },
-  "timestamp": "2024-01-01T00:00:00.000Z"
-}
-```
-
-## 🧪 Scripts Disponíveis
+### 3️⃣ **Comandos Individuais (Se necessário)**
 
 ```bash
-npm start          # Iniciar servidor (produção)
-npm run dev        # Iniciar servidor (desenvolvimento)
-npm run db:migrate # Executar migrations
-npm run db:generate # Gerar cliente Prisma
-npm run db:studio  # Abrir Prisma Studio
-npm run db:seed    # Popular dados iniciais
-npm test           # Executar testes (TODO)
+# Rodar apenas o backend
+npm run backend:dev
+
+# Rodar apenas o frontend
+npm run frontend:dev
+
+# Build para produção
+npm run build
+
+# Visualizar banco de dados
+npm run db:studio
 ```
 
-## 🛡️ Segurança
+## 🔐 **USUÁRIOS DE TESTE**
 
-- **Rate Limiting**: Proteção contra spam e ataques
-- **Helmet**: Headers de segurança HTTP
-- **JWT**: Autenticação stateless
-- **Bcrypt**: Hash seguro de senhas
-- **Validação**: Joi para validação de dados
-- **CORS**: Configurado para domínios específicos
+Após executar `npm run db:seed`, você terá:
 
-## 🏗️ Arquitetura
+```
+👨‍💼 ADMINISTRADOR
+Email: admin@printsy.io
+Senha: 123456
 
-O projeto segue uma arquitetura em camadas:
+👤 USUÁRIO
+Email: user@printsy.io  
+Senha: 123456
+```
 
-1. **Rotas**: Definição de endpoints
-2. **Middlewares**: Autenticação, validação, tratamento de erros
-3. **Controladores**: Lógica de negócio
-4. **Prisma**: Camada de dados (ORM)
-5. **PostgreSQL**: Banco de dados
+## 🎯 **FUNCIONALIDADES IMPLEMENTADAS**
 
-## 🤝 Contribuição
+### ✅ **Backend (100% Funcional)**
 
-1. Fork o projeto
-2. Crie uma branch para sua feature (`git checkout -b feature/AmazingFeature`)
-3. Commit suas mudanças (`git commit -m 'Add some AmazingFeature'`)
-4. Push para a branch (`git push origin feature/AmazingFeature`)
-5. Abra um Pull Request
+#### 🔐 **Autenticação**
+- Login/registro com JWT
+- Middleware de autenticação
+- Controle de acesso por roles
 
-## 📄 Licença
+#### 📊 **Dashboard**
+- Métricas em tempo real
+- Gráficos de vendas
+- Alertas do sistema
 
-Este projeto está sob a licença MIT. Veja o arquivo [LICENSE](LICENSE) para detalhes.
+#### 👥 **CRM/Clientes**
+- CRUD completo de clientes
+- Busca e filtros
+- Histórico de interações
 
-## 📞 Suporte
+#### 📦 **Produtos/Estoque**
+- Gestão de produtos
+- Controle de estoque
+- Movimentações automáticas
+- Alertas de estoque baixo
 
-Para dúvidas ou suporte, entre em contato através dos issues do repositório.
+#### 💰 **Orçamentos**
+- Criação de orçamentos
+- Conversão para pedidos
+- Gestão de status
+- Duplicação de orçamentos
+
+#### 📋 **Pedidos**
+- Gestão completa de pedidos
+- Kanban por status
+- Baixa automática de estoque
+- Controle de prazos
+
+#### 💳 **Financeiro**
+- Contas a pagar/receber
+- Fluxo de caixa
+- Relatórios financeiros
+- Categorização de despesas
+
+### 🚧 **Frontend (Em Desenvolvimento)**
+
+#### ✅ **Estrutura Criada**
+- ✅ Configuração do Vite + React + TypeScript
+- ✅ TailwindCSS configurado
+- ✅ Roteamento com React Router
+- ✅ Sistema de autenticação
+- ✅ Configuração da API (Axios)
+- ✅ Hooks customizados
+
+#### 🔄 **Em Progresso**
+- 🚧 Componentes das páginas
+- 🚧 Formulários
+- 🚧 Tabelas e listagens
+- 🚧 Dashboard com gráficos
+
+## 📚 **DOCUMENTAÇÃO DA API**
+
+Com o backend rodando, acesse:
+
+- **Swagger UI**: http://localhost:3001/api/docs
+- **Health Check**: http://localhost:3001/api/health
+- **API Info**: http://localhost:3001/api/info
+
+## 🔗 **ENDPOINTS PRINCIPAIS**
+
+```bash
+# Autenticação
+POST /api/auth/login
+POST /api/auth/register
+GET  /api/auth/profile
+
+# Dashboard
+GET  /api/dashboard
+GET  /api/dashboard/charts
+GET  /api/dashboard/alerts
+
+# Clientes
+GET    /api/customers
+POST   /api/customers
+GET    /api/customers/:id
+PUT    /api/customers/:id
+DELETE /api/customers/:id
+
+# Produtos
+GET  /api/products
+POST /api/products
+POST /api/products/:id/stock
+
+# Orçamentos
+GET  /api/quotes
+POST /api/quotes
+POST /api/quotes/:id/convert
+GET  /api/quotes/stats
+
+# Pedidos
+GET  /api/orders
+POST /api/orders
+GET  /api/orders/kanban
+PATCH /api/orders/:id/status
+
+# Financeiro
+GET  /api/financial/summary
+GET  /api/financial/cash-flow
+GET  /api/financial/receivables
+GET  /api/financial/payables
+```
+
+## 🧪 **COMO TESTAR**
+
+### 1. **Teste via Interface (Recomendado)**
+```bash
+npm run dev
+# Acesse: http://localhost:3000
+# Login: admin@printsy.io / 123456
+```
+
+### 2. **Teste via API**
+```bash
+# Teste de login
+curl -X POST http://localhost:3001/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"admin@printsy.io","password":"123456"}'
+
+# Teste de dashboard (com token)
+curl -X GET http://localhost:3001/api/dashboard \
+  -H "Authorization: Bearer SEU_TOKEN_AQUI"
+```
+
+### 3. **Teste via Swagger**
+- Acesse: http://localhost:3001/api/docs
+- Use os usuários de teste para autenticar
+
+## 🚨 **SOLUÇÃO DE PROBLEMAS**
+
+### ❌ **Erro: Banco não conecta**
+```bash
+# Verifique se PostgreSQL está rodando
+# Confirme a DATABASE_URL no .env
+npm run db:migrate
+```
+
+### ❌ **Erro: Frontend não carrega**
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+### ❌ **Erro: CORS**
+```bash
+# O backend já está configurado para aceitar o frontend
+# Verifique se está rodando em localhost:3000
+```
+
+### ❌ **Erro: Token inválido**
+```bash
+# Limpe o localStorage do navegador
+localStorage.clear()
+# Ou faça logout e login novamente
+```
+
+## 📋 **PRÓXIMOS PASSOS**
+
+### 🎯 **Desenvolvimento Frontend**
+1. ✅ Estrutura básica (FEITO)
+2. 🚧 Páginas principais (EM ANDAMENTO)
+3. 📋 Formulários e validações
+4. 📊 Dashboard com gráficos
+5. 📱 Responsividade
+6. 🎨 Melhorias de UX/UI
+
+### 🚀 **Funcionalidades Futuras**
+- 📧 Sistema de notificações
+- 📄 Geração de PDFs
+- 📊 Relatórios avançados
+- 🔄 Backup automático
+- 📱 App mobile (React Native)
+
+## 🤝 **CONTRIBUIÇÃO**
+
+1. Clone o repositório
+2. Execute `npm run setup`
+3. Crie uma branch para sua feature
+4. Desenvolva e teste
+5. Envie um Pull Request
 
 ---
 
-**Desenvolvido com ❤️ para digitalizar gráficas brasileiras**
+## 🎉 **SISTEMA PRONTO PARA DESENVOLVIMENTO!**
+
+O Printsy.io está configurado como um **sistema fullstack moderno** no Cursor AI, com:
+
+✅ **Backend completo e funcional**  
+✅ **Frontend estruturado e conectado**  
+✅ **Integração via proxy configurada**  
+✅ **Autenticação JWT funcionando**  
+✅ **Banco de dados populado**  
+✅ **Documentação completa**  
+
+**Para começar a desenvolver, execute:**
+```bash
+npm run dev
+```
+
+**E acesse:** http://localhost:3000
+
+---
+
+**🖨️ Printsy.io - Transformando a gestão de gráficas com tecnologia moderna!** ✨

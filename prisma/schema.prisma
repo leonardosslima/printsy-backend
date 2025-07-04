@@ -1,0 +1,342 @@
+// This is your Prisma schema file for Printsy.io
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ========================================
+// MODELOS PRINCIPAIS
+// ========================================
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String
+  password  String
+  role      String   @default("USER") // ADMIN, MANAGER, USER
+  avatar    String?
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relacionamentos
+  customers         Customer[]        @relation("CreatedBy")
+  products          Product[]         @relation("CreatedBy")
+  quotes            Quote[]           @relation("CreatedBy")
+  orders            Order[]           @relation("CreatedBy")
+  invoices          Invoice[]         @relation("CreatedBy")
+  stockMovements    StockMovement[]   @relation("CreatedBy")
+  notifications     Notification[]
+  interactions      Interaction[]     @relation("CreatedBy")
+  receivables       AccountReceivable[] @relation("CreatedBy")
+  payables          AccountPayable[]    @relation("CreatedBy")
+
+  @@map("users")
+}
+
+model Customer {
+  id           String   @id @default(cuid())
+  name         String
+  email        String?
+  phone        String?
+  cpfCnpj      String?  @unique
+  type         String   @default("INDIVIDUAL") // INDIVIDUAL, COMPANY
+  address      String?
+  city         String?
+  state        String?
+  zipCode      String?
+  birthDate    DateTime?
+  companyName  String?
+  notes        String?
+  tags         String?  // JSON string para tags
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Relacionamentos
+  userId       String
+  createdBy    User          @relation("CreatedBy", fields: [userId], references: [id])
+  quotes       Quote[]
+  orders       Order[]
+  invoices     Invoice[]
+  interactions Interaction[]
+  receivables  AccountReceivable[]
+
+  @@map("customers")
+}
+
+model Product {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  code        String?  @unique
+  category    String?
+  price       Float    @default(0)
+  cost        Float    @default(0)
+  stock       Int      @default(0)
+  minStock    Int      @default(0)
+  unit        String   @default("UN")
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relacionamentos
+  userId         String
+  createdBy      User            @relation("CreatedBy", fields: [userId], references: [id])
+  quoteItems     QuoteItem[]
+  orderItems     OrderItem[]
+  invoiceItems   InvoiceItem[]
+  stockMovements StockMovement[]
+
+  @@map("products")
+}
+
+model Quote {
+  id           String   @id @default(cuid())
+  number       String   @unique
+  status       String   @default("DRAFT") // DRAFT, SENT, VIEWED, APPROVED, REJECTED, EXPIRED, CONVERTED
+  validUntil   DateTime
+  observations String?
+  discount     Float    @default(0)
+  discountType String   @default("PERCENTAGE") // PERCENTAGE, FIXED
+  subtotal     Float    @default(0)
+  total        Float    @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Relacionamentos
+  customerId String
+  userId     String
+  customer   Customer    @relation(fields: [customerId], references: [id])
+  createdBy  User        @relation("CreatedBy", fields: [userId], references: [id])
+  items      QuoteItem[]
+  orders     Order[]
+
+  @@map("quotes")
+}
+
+model QuoteItem {
+  id          String @id @default(cuid())
+  quantity    Float
+  unitPrice   Float
+  discount    Float  @default(0)
+  total       Float
+  description String?
+
+  // Relacionamentos
+  quoteId   String
+  productId String
+  quote     Quote   @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+  product   Product @relation(fields: [productId], references: [id])
+
+  @@map("quote_items")
+}
+
+model Order {
+  id           String    @id @default(cuid())
+  number       String    @unique
+  status       String    @default("PENDING") // PENDING, CONFIRMED, IN_PRODUCTION, READY, DELIVERED, CANCELLED
+  priority     String    @default("NORMAL") // LOW, NORMAL, HIGH, URGENT
+  deadline     DateTime?
+  deliveryDate DateTime?
+  observations String?
+  discount     Float     @default(0)
+  discountType String    @default("PERCENTAGE") // PERCENTAGE, FIXED
+  subtotal     Float     @default(0)
+  total        Float     @default(0)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  // Relacionamentos
+  customerId String
+  userId     String
+  quoteId    String?
+  customer   Customer     @relation(fields: [customerId], references: [id])
+  createdBy  User         @relation("CreatedBy", fields: [userId], references: [id])
+  quote      Quote?       @relation(fields: [quoteId], references: [id])
+  items      OrderItem[]
+  
+  @@unique([quoteId])
+  invoice    Invoice?
+
+  @@map("orders")
+}
+
+model OrderItem {
+  id          String @id @default(cuid())
+  quantity    Float
+  unitPrice   Float
+  discount    Float  @default(0)
+  total       Float
+  description String?
+
+  // Relacionamentos
+  orderId   String
+  productId String
+  order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product   Product @relation(fields: [productId], references: [id])
+
+  @@map("order_items")
+}
+
+model Invoice {
+  id          String    @id @default(cuid())
+  number      String    @unique
+  type        String    @default("SALE") // SALE, SERVICE, ADVANCE, REFUND
+  status      String    @default("PENDING") // PENDING, SENT, PAID, OVERDUE, CANCELLED
+  issueDate   DateTime  @default(now())
+  dueDate     DateTime
+  paidDate    DateTime?
+  observations String?
+  discount    Float     @default(0)
+  discountType String   @default("PERCENTAGE") // PERCENTAGE, FIXED
+  subtotal    Float     @default(0)
+  total       Float     @default(0)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  // Relacionamentos
+  customerId String
+  userId     String
+  orderId    String?  @unique
+  customer   Customer      @relation(fields: [customerId], references: [id])
+  createdBy  User          @relation("CreatedBy", fields: [userId], references: [id])
+  order      Order?        @relation(fields: [orderId], references: [id])
+  items      InvoiceItem[]
+  
+  @@map("invoices")
+}
+
+model InvoiceItem {
+  id          String @id @default(cuid())
+  quantity    Float
+  unitPrice   Float
+  discount    Float  @default(0)
+  total       Float
+  description String?
+
+  // Relacionamentos
+  invoiceId String
+  productId String
+  invoice   Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  product   Product @relation(fields: [productId], references: [id])
+
+  @@map("invoice_items")
+}
+
+model StockMovement {
+  id          String   @id @default(cuid())
+  type        String   // IN, OUT, ADJUSTMENT, TRANSFER
+  quantity    Float
+  reason      String
+  reference   String?
+  createdAt   DateTime @default(now())
+
+  // Relacionamentos
+  productId String
+  userId    String
+  product   Product @relation(fields: [productId], references: [id])
+  createdBy User    @relation("CreatedBy", fields: [userId], references: [id])
+
+  @@map("stock_movements")
+}
+
+model AccountReceivable {
+  id           String    @id @default(cuid())
+  description  String
+  amount       Float
+  dueDate      DateTime
+  paidDate     DateTime?
+  status       String    @default("PENDING") // PENDING, PAID, PARTIAL, OVERDUE, CANCELLED
+  reference    String?
+  observations String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  // Relacionamentos
+  customerId String
+  userId     String
+  customer   Customer @relation(fields: [customerId], references: [id])
+  createdBy  User     @relation("CreatedBy", fields: [userId], references: [id])
+
+  @@map("accounts_receivable")
+}
+
+model AccountPayable {
+  id           String    @id @default(cuid())
+  description  String
+  amount       Float
+  dueDate      DateTime
+  paidDate     DateTime?
+  status       String    @default("PENDING") // PENDING, PAID, PARTIAL, OVERDUE, CANCELLED
+  supplier     String?
+  category     String?
+  reference    String?
+  observations String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  // Relacionamentos
+  userId    String
+  createdBy User @relation("CreatedBy", fields: [userId], references: [id])
+
+  @@map("accounts_payable")
+}
+
+model Interaction {
+  id          String   @id @default(cuid())
+  type        String   // CALL, EMAIL, MEETING, QUOTE_SENT, ORDER_CREATED, PAYMENT_RECEIVED, OTHER
+  subject     String
+  description String?
+  date        DateTime @default(now())
+  createdAt   DateTime @default(now())
+
+  // Relacionamentos
+  customerId String
+  userId     String
+  customer   Customer @relation(fields: [customerId], references: [id])
+  createdBy  User     @relation("CreatedBy", fields: [userId], references: [id])
+
+  @@map("interactions")
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  type      String   // INFO, WARNING, ERROR, SUCCESS
+  title     String
+  message   String
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  // Relacionamentos
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  @@map("notifications")
+}
+
+model CompanySettings {
+  id           String  @id @default(cuid())
+  companyName  String
+  tradeName    String?
+  cnpj         String?
+  email        String?
+  phone        String?
+  website      String?
+  address      String?
+  city         String?
+  state        String?
+  zipCode      String?
+  logo         String?
+  primaryColor String? @default("#3B82F6")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@map("company_settings")
+}

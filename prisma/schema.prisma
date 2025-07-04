@@ -1,0 +1,272 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Modelo de usuário para autenticação
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  name      String
+  role      UserRole @default(USER)
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relacionamentos
+  createdQuotes Quote[] @relation("CreatedBy")
+  createdOrders Order[] @relation("CreatedBy")
+  
+  @@map("users")
+}
+
+// Modelo de cliente (CRM)
+model Customer {
+  id          String   @id @default(cuid())
+  name        String
+  email       String?  @unique
+  phone       String?
+  document    String?  // CPF/CNPJ
+  address     String?
+  city        String?
+  state       String?
+  zipCode     String?
+  notes       String?
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relacionamentos
+  quotes Quote[]
+  orders Order[]
+  
+  @@map("customers")
+}
+
+// Modelo de produtos/serviços
+model Product {
+  id          String      @id @default(cuid())
+  name        String
+  description String?
+  category    String
+  unit        String      // unidade (un, kg, m², etc)
+  price       Float       // preço base
+  stock       Int         @default(0)
+  minStock    Int         @default(0)
+  active      Boolean     @default(true)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  // Relacionamentos
+  quoteItems  QuoteItem[]
+  orderItems  OrderItem[]
+  stockMovements StockMovement[]
+  
+  @@map("products")
+}
+
+// Modelo de orçamentos
+model Quote {
+  id          String      @id @default(cuid())
+  number      String      @unique
+  customerId  String
+  userId      String
+  description String?
+  status      QuoteStatus @default(PENDING)
+  validUntil  DateTime
+  discount    Float       @default(0)
+  total       Float
+  notes       String?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  // Relacionamentos
+  customer    Customer    @relation(fields: [customerId], references: [id])
+  createdBy   User        @relation("CreatedBy", fields: [userId], references: [id])
+  items       QuoteItem[]
+  order       Order?      // um orçamento pode virar um pedido
+  
+  @@map("quotes")
+}
+
+// Itens do orçamento
+model QuoteItem {
+  id        String @id @default(cuid())
+  quoteId   String
+  productId String
+  quantity  Float
+  unitPrice Float
+  total     Float
+  notes     String?
+
+  // Relacionamentos
+  quote   Quote   @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id])
+  
+  @@map("quote_items")
+}
+
+// Modelo de pedidos
+model Order {
+  id          String      @id @default(cuid())
+  number      String      @unique
+  customerId  String
+  userId      String
+  quoteId     String?     // opcional, pode ser criado direto sem orçamento
+  description String?
+  status      OrderStatus @default(PENDING)
+  priority    Priority    @default(NORMAL)
+  deadline    DateTime?
+  discount    Float       @default(0)
+  total       Float
+  notes       String?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  // Relacionamentos
+  customer    Customer    @relation(fields: [customerId], references: [id])
+  createdBy   User        @relation("CreatedBy", fields: [userId], references: [id])
+  quote       Quote?      @relation(fields: [quoteId], references: [id])
+  items       OrderItem[]
+  
+  @@map("orders")
+}
+
+// Itens do pedido
+model OrderItem {
+  id        String @id @default(cuid())
+  orderId   String
+  productId String
+  quantity  Float
+  unitPrice Float
+  total     Float
+  notes     String?
+
+  // Relacionamentos
+  order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id])
+  
+  @@map("order_items")
+}
+
+// Movimentação de estoque
+model StockMovement {
+  id          String        @id @default(cuid())
+  productId   String
+  type        MovementType
+  quantity    Float
+  unitPrice   Float?
+  total       Float?
+  reason      String        // motivo da movimentação
+  reference   String?       // referência (número do pedido, nota fiscal, etc)
+  createdAt   DateTime      @default(now())
+
+  // Relacionamentos
+  product Product @relation(fields: [productId], references: [id])
+  
+  @@map("stock_movements")
+}
+
+// Contas a pagar
+model AccountPayable {
+  id          String        @id @default(cuid())
+  description String
+  amount      Float
+  dueDate     DateTime
+  paidDate    DateTime?
+  status      PaymentStatus @default(PENDING)
+  category    String
+  supplier    String?
+  notes       String?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  
+  @@map("accounts_payable")
+}
+
+// Contas a receber
+model AccountReceivable {
+  id          String        @id @default(cuid())
+  customerId  String?
+  orderId     String?       // opcional, pode ser uma receita avulsa
+  description String
+  amount      Float
+  dueDate     DateTime
+  paidDate    DateTime?
+  status      PaymentStatus @default(PENDING)
+  notes       String?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  // Relacionamentos
+  customer Customer? @relation(fields: [customerId], references: [id])
+  
+  @@map("accounts_receivable")
+}
+
+// Configurações da gráfica
+model CompanySettings {
+  id        String   @id @default(cuid())
+  name      String
+  document  String   // CNPJ
+  email     String
+  phone     String
+  address   String
+  city      String
+  state     String
+  zipCode   String
+  logo      String?  // caminho para o logo
+  theme     String   @default("light")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@map("company_settings")
+}
+
+// Enums
+enum UserRole {
+  ADMIN
+  USER
+}
+
+enum QuoteStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  EXPIRED
+}
+
+enum OrderStatus {
+  PENDING
+  IN_PRODUCTION
+  READY
+  DELIVERED
+  CANCELLED
+}
+
+enum Priority {
+  LOW
+  NORMAL
+  HIGH
+  URGENT
+}
+
+enum MovementType {
+  IN
+  OUT
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  OVERDUE
+  CANCELLED
+}

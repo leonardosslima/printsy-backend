@@ -6,440 +6,337 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
   url      = env("DATABASE_URL")
 }
 
-// =============================================================================
-// MODELOS DE USUÁRIO E AUTENTICAÇÃO
-// =============================================================================
+// ========================================
+// MODELOS PRINCIPAIS
+// ========================================
 
 model User {
   id        String   @id @default(cuid())
   email     String   @unique
-  password  String
   name      String
+  password  String
+  role      String   @default("USER") // ADMIN, MANAGER, USER
   avatar    String?
-  role      UserRole @default(USER)
   active    Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   // Relacionamentos
-  createdQuotes Quote[] @relation("CreatedBy")
-  createdOrders Order[] @relation("CreatedBy")
-  createdInvoices Invoice[] @relation("CreatedBy")
-  
+  customers         Customer[]        @relation("CreatedBy")
+  products          Product[]         @relation("CreatedBy")
+  quotes            Quote[]           @relation("CreatedBy")
+  orders            Order[]           @relation("CreatedBy")
+  invoices          Invoice[]         @relation("CreatedBy")
+  stockMovements    StockMovement[]   @relation("CreatedBy")
+  notifications     Notification[]
+  interactions      Interaction[]     @relation("CreatedBy")
+  receivables       AccountReceivable[] @relation("CreatedBy")
+  payables          AccountPayable[]    @relation("CreatedBy")
+
   @@map("users")
 }
 
-// =============================================================================
-// MODELOS DE CRM E CLIENTES
-// =============================================================================
-
 model Customer {
+  id           String   @id @default(cuid())
+  name         String
+  email        String?
+  phone        String?
+  cpfCnpj      String?  @unique
+  type         String   @default("INDIVIDUAL") // INDIVIDUAL, COMPANY
+  address      String?
+  city         String?
+  state        String?
+  zipCode      String?
+  birthDate    DateTime?
+  companyName  String?
+  notes        String?
+  tags         String?  // JSON string para tags
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Relacionamentos
+  userId       String
+  createdBy    User          @relation("CreatedBy", fields: [userId], references: [id])
+  quotes       Quote[]
+  orders       Order[]
+  invoices     Invoice[]
+  interactions Interaction[]
+  receivables  AccountReceivable[]
+
+  @@map("customers")
+}
+
+model Product {
   id          String   @id @default(cuid())
   name        String
-  email       String?  @unique
-  phone       String?
-  document    String?  // CPF/CNPJ
-  type        CustomerType @default(INDIVIDUAL) // Pessoa física ou jurídica
-  address     String?
-  city        String?
-  state       String?
-  zipCode     String?
-  notes       String?
-  tags        String[] // Tags para categorização
+  description String?
+  code        String?  @unique
+  category    String?
+  price       Float    @default(0)
+  cost        Float    @default(0)
+  stock       Int      @default(0)
+  minStock    Int      @default(0)
+  unit        String   @default("UN")
   active      Boolean  @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
   // Relacionamentos
-  quotes Quote[]
-  orders Order[]
-  invoices Invoice[]
-  accountsReceivable AccountReceivable[]
-  interactions CustomerInteraction[]
-  
-  @@map("customers")
-}
-
-model CustomerInteraction {
-  id          String           @id @default(cuid())
-  customerId  String
-  type        InteractionType
-  description String
-  notes       String?
-  date        DateTime         @default(now())
-  
-  // Relacionamentos
-  customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
-  
-  @@map("customer_interactions")
-}
-
-// =============================================================================
-// MODELOS DE PRODUTOS E ESTOQUE
-// =============================================================================
-
-model Product {
-  id          String      @id @default(cuid())
-  name        String
-  description String?
-  category    String
-  unit        String      // unidade (un, kg, m², etc)
-  price       Float       // preço base
-  cost        Float?      // custo do produto
-  stock       Int         @default(0)
-  minStock    Int         @default(0)
-  maxStock    Int?        // estoque máximo
-  barcode     String?     // código de barras
-  sku         String?     // SKU único
-  active      Boolean     @default(true)
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
-
-  // Relacionamentos
-  quoteItems  QuoteItem[]
-  orderItems  OrderItem[]
-  invoiceItems InvoiceItem[]
+  userId         String
+  createdBy      User            @relation("CreatedBy", fields: [userId], references: [id])
+  quoteItems     QuoteItem[]
+  orderItems     OrderItem[]
+  invoiceItems   InvoiceItem[]
   stockMovements StockMovement[]
-  
+
   @@map("products")
 }
 
-model StockMovement {
-  id          String        @id @default(cuid())
-  productId   String
-  type        MovementType
-  quantity    Float
-  unitPrice   Float?
-  total       Float?
-  reason      String        // motivo da movimentação
-  reference   String?       // referência (número do pedido, nota fiscal, etc)
-  createdAt   DateTime      @default(now())
-
-  // Relacionamentos
-  product Product @relation(fields: [productId], references: [id])
-  
-  @@map("stock_movements")
-}
-
-// =============================================================================
-// MODELOS DE ORÇAMENTOS
-// =============================================================================
-
 model Quote {
-  id          String      @id @default(cuid())
-  number      String      @unique
-  customerId  String
-  userId      String
-  title       String?     // título do orçamento
-  description String?
-  status      QuoteStatus @default(DRAFT)
-  validUntil  DateTime
-  discount    Float       @default(0)
-  discountType DiscountType @default(PERCENTAGE)
-  subtotal    Float       @default(0)
-  total       Float       @default(0)
-  notes       String?
-  terms       String?     // termos e condições
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
+  id           String   @id @default(cuid())
+  number       String   @unique
+  status       String   @default("DRAFT") // DRAFT, SENT, VIEWED, APPROVED, REJECTED, EXPIRED, CONVERTED
+  validUntil   DateTime
+  observations String?
+  discount     Float    @default(0)
+  discountType String   @default("PERCENTAGE") // PERCENTAGE, FIXED
+  subtotal     Float    @default(0)
+  total        Float    @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   // Relacionamentos
-  customer    Customer    @relation(fields: [customerId], references: [id])
-  createdBy   User        @relation("CreatedBy", fields: [userId], references: [id])
-  items       QuoteItem[]
-  order       Order?      // um orçamento pode virar um pedido
-  
+  customerId String
+  userId     String
+  customer   Customer    @relation(fields: [customerId], references: [id])
+  createdBy  User        @relation("CreatedBy", fields: [userId], references: [id])
+  items      QuoteItem[]
+  orders     Order[]
+
   @@map("quotes")
 }
 
 model QuoteItem {
-  id        String @id @default(cuid())
-  quoteId   String
-  productId String
-  quantity  Float
-  unitPrice Float
-  discount  Float  @default(0)
-  total     Float
-  notes     String?
+  id          String @id @default(cuid())
+  quantity    Float
+  unitPrice   Float
+  discount    Float  @default(0)
+  total       Float
+  description String?
 
   // Relacionamentos
-  quote   Quote   @relation(fields: [quoteId], references: [id], onDelete: Cascade)
-  product Product @relation(fields: [productId], references: [id])
-  
+  quoteId   String
+  productId String
+  quote     Quote   @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+  product   Product @relation(fields: [productId], references: [id])
+
   @@map("quote_items")
 }
 
-// =============================================================================
-// MODELOS DE PEDIDOS
-// =============================================================================
-
 model Order {
-  id          String      @id @default(cuid())
-  number      String      @unique
-  customerId  String
-  userId      String
-  quoteId     String?     // opcional, pode ser criado direto sem orçamento
-  title       String?
-  description String?
-  status      OrderStatus @default(PENDING)
-  priority    Priority    @default(NORMAL)
-  deadline    DateTime?
-  startDate   DateTime?   // data de início da produção
-  discount    Float       @default(0)
-  discountType DiscountType @default(PERCENTAGE)
-  subtotal    Float       @default(0)
-  total       Float       @default(0)
-  notes       String?
-  production_notes String? // observações de produção
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
+  id           String    @id @default(cuid())
+  number       String    @unique
+  status       String    @default("PENDING") // PENDING, CONFIRMED, IN_PRODUCTION, READY, DELIVERED, CANCELLED
+  priority     String    @default("NORMAL") // LOW, NORMAL, HIGH, URGENT
+  deadline     DateTime?
+  deliveryDate DateTime?
+  observations String?
+  discount     Float     @default(0)
+  discountType String    @default("PERCENTAGE") // PERCENTAGE, FIXED
+  subtotal     Float     @default(0)
+  total        Float     @default(0)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
 
   // Relacionamentos
-  customer    Customer    @relation(fields: [customerId], references: [id])
-  createdBy   User        @relation("CreatedBy", fields: [userId], references: [id])
-  quote       Quote?      @relation(fields: [quoteId], references: [id])
-  items       OrderItem[]
+  customerId String
+  userId     String
+  quoteId    String?
+  customer   Customer     @relation(fields: [customerId], references: [id])
+  createdBy  User         @relation("CreatedBy", fields: [userId], references: [id])
+  quote      Quote?       @relation(fields: [quoteId], references: [id])
+  items      OrderItem[]
   
   @@unique([quoteId])
-  invoice     Invoice?    // um pedido pode gerar uma fatura
-  
+  invoice    Invoice?
+
   @@map("orders")
 }
 
 model OrderItem {
-  id        String @id @default(cuid())
-  orderId   String
-  productId String
-  quantity  Float
-  unitPrice Float
-  discount  Float  @default(0)
-  total     Float
-  notes     String?
+  id          String @id @default(cuid())
+  quantity    Float
+  unitPrice   Float
+  discount    Float  @default(0)
+  total       Float
+  description String?
 
   // Relacionamentos
-  order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  product Product @relation(fields: [productId], references: [id])
-  
+  orderId   String
+  productId String
+  order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product   Product @relation(fields: [productId], references: [id])
+
   @@map("order_items")
 }
 
-// =============================================================================
-// MODELOS FINANCEIROS E FATURAMENTO
-// =============================================================================
-
 model Invoice {
-  id          String        @id @default(cuid())
-  number      String        @unique
-  customerId  String
-  userId      String
-  orderId     String?       // opcional
-  type        InvoiceType   @default(SALE)
-  status      InvoiceStatus @default(PENDING)
-  issueDate   DateTime      @default(now())
+  id          String    @id @default(cuid())
+  number      String    @unique
+  type        String    @default("SALE") // SALE, SERVICE, ADVANCE, REFUND
+  status      String    @default("PENDING") // PENDING, SENT, PAID, OVERDUE, CANCELLED
+  issueDate   DateTime  @default(now())
   dueDate     DateTime
   paidDate    DateTime?
-  subtotal    Float         @default(0)
-  discount    Float         @default(0)
-  tax         Float         @default(0)
-  total       Float         @default(0)
-  notes       String?
-  
+  observations String?
+  discount    Float     @default(0)
+  discountType String   @default("PERCENTAGE") // PERCENTAGE, FIXED
+  subtotal    Float     @default(0)
+  total       Float     @default(0)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
   // Relacionamentos
-  customer Customer @relation(fields: [customerId], references: [id])
-  createdBy User @relation("CreatedBy", fields: [userId], references: [id])
-  order Order? @relation(fields: [orderId], references: [id])
-  items InvoiceItem[]
-  
-  @@unique([orderId])
+  customerId String
+  userId     String
+  orderId    String?  @unique
+  customer   Customer      @relation(fields: [customerId], references: [id])
+  createdBy  User          @relation("CreatedBy", fields: [userId], references: [id])
+  order      Order?        @relation(fields: [orderId], references: [id])
+  items      InvoiceItem[]
   
   @@map("invoices")
 }
 
 model InvoiceItem {
-  id        String @id @default(cuid())
-  invoiceId String
-  productId String
-  quantity  Float
-  unitPrice Float
-  discount  Float  @default(0)
-  total     Float
-  notes     String?
+  id          String @id @default(cuid())
+  quantity    Float
+  unitPrice   Float
+  discount    Float  @default(0)
+  total       Float
+  description String?
 
   // Relacionamentos
-  invoice Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
-  product Product @relation(fields: [productId], references: [id])
-  
+  invoiceId String
+  productId String
+  invoice   Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  product   Product @relation(fields: [productId], references: [id])
+
   @@map("invoice_items")
 }
 
-model AccountReceivable {
-  id          String        @id @default(cuid())
-  customerId  String?
-  invoiceId   String?       // opcional, pode ser uma receita avulsa
-  description String
-  amount      Float
-  dueDate     DateTime
-  paidDate    DateTime?
-  status      PaymentStatus @default(PENDING)
-  paymentMethod String?     // método de pagamento
-  notes       String?
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
+model StockMovement {
+  id          String   @id @default(cuid())
+  type        String   // IN, OUT, ADJUSTMENT, TRANSFER
+  quantity    Float
+  reason      String
+  reference   String?
+  createdAt   DateTime @default(now())
 
   // Relacionamentos
-  customer Customer? @relation(fields: [customerId], references: [id])
-  
+  productId String
+  userId    String
+  product   Product @relation(fields: [productId], references: [id])
+  createdBy User    @relation("CreatedBy", fields: [userId], references: [id])
+
+  @@map("stock_movements")
+}
+
+model AccountReceivable {
+  id           String    @id @default(cuid())
+  description  String
+  amount       Float
+  dueDate      DateTime
+  paidDate     DateTime?
+  status       String    @default("PENDING") // PENDING, PAID, PARTIAL, OVERDUE, CANCELLED
+  reference    String?
+  observations String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  // Relacionamentos
+  customerId String
+  userId     String
+  customer   Customer @relation(fields: [customerId], references: [id])
+  createdBy  User     @relation("CreatedBy", fields: [userId], references: [id])
+
   @@map("accounts_receivable")
 }
 
 model AccountPayable {
-  id          String        @id @default(cuid())
-  description String
-  amount      Float
-  dueDate     DateTime
-  paidDate    DateTime?
-  status      PaymentStatus @default(PENDING)
-  category    String
-  supplier    String?
-  paymentMethod String?
-  notes       String?
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
-  
+  id           String    @id @default(cuid())
+  description  String
+  amount       Float
+  dueDate      DateTime
+  paidDate     DateTime?
+  status       String    @default("PENDING") // PENDING, PAID, PARTIAL, OVERDUE, CANCELLED
+  supplier     String?
+  category     String?
+  reference    String?
+  observations String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  // Relacionamentos
+  userId    String
+  createdBy User @relation("CreatedBy", fields: [userId], references: [id])
+
   @@map("accounts_payable")
 }
 
-// =============================================================================
-// MODELOS DE CONFIGURAÇÃO E SISTEMA
-// =============================================================================
+model Interaction {
+  id          String   @id @default(cuid())
+  type        String   // CALL, EMAIL, MEETING, QUOTE_SENT, ORDER_CREATED, PAYMENT_RECEIVED, OTHER
+  subject     String
+  description String?
+  date        DateTime @default(now())
+  createdAt   DateTime @default(now())
 
-model CompanySettings {
-  id        String   @id @default(cuid())
-  name      String
-  document  String   // CNPJ
-  email     String
-  phone     String
-  address   String
-  city      String
-  state     String
-  zipCode   String
-  logo      String?  // caminho para o logo
-  website   String?
-  theme     String   @default("light")
-  language  String   @default("pt-BR")
-  timezone  String   @default("America/Sao_Paulo")
-  currency  String   @default("BRL")
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  
-  @@map("company_settings")
+  // Relacionamentos
+  customerId String
+  userId     String
+  customer   Customer @relation(fields: [customerId], references: [id])
+  createdBy  User     @relation("CreatedBy", fields: [userId], references: [id])
+
+  @@map("interactions")
 }
 
-model SystemNotification {
+model Notification {
   id        String   @id @default(cuid())
+  type      String   // INFO, WARNING, ERROR, SUCCESS
   title     String
   message   String
-  type      NotificationType @default(INFO)
   read      Boolean  @default(false)
-  userId    String?  // se null, é para todos os usuários
   createdAt DateTime @default(now())
-  
-  @@map("system_notifications")
+
+  // Relacionamentos
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  @@map("notifications")
 }
 
-// =============================================================================
-// ENUMS
-// =============================================================================
+model CompanySettings {
+  id           String  @id @default(cuid())
+  companyName  String
+  tradeName    String?
+  cnpj         String?
+  email        String?
+  phone        String?
+  website      String?
+  address      String?
+  city         String?
+  state        String?
+  zipCode      String?
+  logo         String?
+  primaryColor String? @default("#3B82F6")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
-enum UserRole {
-  ADMIN
-  MANAGER
-  USER
-}
-
-enum CustomerType {
-  INDIVIDUAL  // Pessoa física
-  COMPANY     // Pessoa jurídica
-}
-
-enum InteractionType {
-  CALL
-  EMAIL
-  MEETING
-  QUOTE_SENT
-  ORDER_CREATED
-  PAYMENT_RECEIVED
-  OTHER
-}
-
-enum QuoteStatus {
-  DRAFT
-  SENT
-  VIEWED
-  APPROVED
-  REJECTED
-  EXPIRED
-  CONVERTED
-}
-
-enum OrderStatus {
-  PENDING
-  CONFIRMED
-  IN_PRODUCTION
-  READY
-  DELIVERED
-  CANCELLED
-}
-
-enum InvoiceType {
-  SALE
-  SERVICE
-  ADVANCE
-  REFUND
-}
-
-enum InvoiceStatus {
-  PENDING
-  SENT
-  PAID
-  OVERDUE
-  CANCELLED
-}
-
-enum Priority {
-  LOW
-  NORMAL
-  HIGH
-  URGENT
-}
-
-enum MovementType {
-  IN
-  OUT
-  ADJUSTMENT
-  TRANSFER
-}
-
-enum PaymentStatus {
-  PENDING
-  PAID
-  PARTIAL
-  OVERDUE
-  CANCELLED
-}
-
-enum DiscountType {
-  PERCENTAGE
-  FIXED
-}
-
-enum NotificationType {
-  INFO
-  WARNING
-  ERROR
-  SUCCESS
+  @@map("company_settings")
 }
